@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Student Attendance</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #f5f4f0;
+      --surface: #ffffff;
+      --border: #e2e1db;
+      --text: #1a1a18;
+      --text-muted: #6b6b67;
+      --green: #1D9E75;
+      --green-light: #e1f5ee;
+      --red: #e24b4a;
+      --red-light: #fcebeb;
+      --amber: #ba7517;
+      --amber-light: #faeeda;
+      --radius: 10px;
+      --shadow: 0 1px 4px rgba(0,0,0,0.06);
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 0 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 56px;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    header h1 { font-size: 15px; font-weight: 600; }
+    header span { font-size: 13px; color: var(--text-muted); }
+
+    .container { max-width: 860px; margin: 0 auto; padding: 2rem 1.5rem; }
+
+    /* Date picker row */
+    .top-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 1.5rem;
+      flex-wrap: wrap;
+    }
+
+    .top-row label { font-size: 13px; color: var(--text-muted); }
+
+    input[type="date"] {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 7px 12px;
+      font-size: 14px;
+      background: var(--surface);
+      color: var(--text);
+      cursor: pointer;
+    }
+
+    /* Summary cards */
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: 12px;
+      margin-bottom: 1.5rem;
+    }
+
+    .stat-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px 16px;
+      text-align: center;
+    }
+
+    .stat-card .num {
+      font-size: 26px;
+      font-weight: 600;
+      display: block;
+    }
+
+    .stat-card .lbl {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 2px;
+      display: block;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .stat-card.green .num { color: var(--green); }
+    .stat-card.red .num   { color: var(--red); }
+    .stat-card.amber .num { color: var(--amber); }
+
+    /* Student list */
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+
+    .section-header h2 { font-size: 14px; font-weight: 600; }
+
+    .actions { display: flex; gap: 8px; }
+
+    .btn {
+      font-size: 13px;
+      padding: 7px 14px;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text);
+      cursor: pointer;
+      font-weight: 500;
+      transition: background 0.15s;
+    }
+
+    .btn:hover { background: var(--bg); }
+
+    .btn.primary {
+      background: var(--green);
+      color: #fff;
+      border-color: var(--green);
+    }
+
+    .btn.primary:hover { background: #0F6E56; border-color: #0F6E56; }
+
+    .btn.danger { color: var(--red); }
+    .btn.danger:hover { background: var(--red-light); border-color: var(--red); }
+
+    /* Student rows */
+    .student-list { display: flex; flex-direction: column; gap: 8px; }
+
+    .student-row {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      transition: border-color 0.15s;
+    }
+
+    .student-row.present { border-color: var(--green); background: var(--green-light); }
+    .student-row.absent  { border-color: var(--red);   background: var(--red-light); }
+
+    .avatar {
+      width: 38px; height: 38px;
+      border-radius: 50%;
+      background: #e2e1db;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px; font-weight: 600; color: var(--text-muted);
+      flex-shrink: 0;
+    }
+
+    .student-row.present .avatar { background: #9FE1CB; color: #085041; }
+    .student-row.absent  .avatar { background: #F7C1C1; color: #791F1F; }
+
+    .student-name { flex: 1; font-size: 15px; font-weight: 500; }
+
+    /* Toggle switch */
+    .toggle-wrap {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .toggle-label { font-size: 12px; color: var(--text-muted); min-width: 44px; text-align: right; }
+    .student-row.present .toggle-label { color: var(--green); font-weight: 600; }
+    .student-row.absent  .toggle-label { color: var(--red); font-weight: 600; }
+
+    .toggle {
+      position: relative;
+      width: 44px; height: 24px;
+      cursor: pointer;
+    }
+
+    .toggle input { opacity: 0; width: 0; height: 0; position: absolute; }
+
+    .slider {
+      position: absolute; inset: 0;
+      background: #d0cfc9;
+      border-radius: 99px;
+      transition: background 0.2s;
+    }
+
+    .slider::before {
+      content: '';
+      position: absolute;
+      width: 18px; height: 18px;
+      left: 3px; top: 3px;
+      background: white;
+      border-radius: 50%;
+      transition: transform 0.2s;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    }
+
+    .toggle input:checked + .slider { background: var(--green); }
+    .toggle input:checked + .slider::before { transform: translateX(20px); }
+
+    /* Add student */
+    .add-student-row {
+      display: flex;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .add-student-row input[type="text"] {
+      flex: 1;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 8px 12px;
+      font-size: 14px;
+      background: var(--surface);
+    }
+
+    .add-student-row input:focus { outline: none; border-color: var(--green); }
+
+    /* Toast */
+    .toast {
+      position: fixed;
+      bottom: 24px; right: 24px;
+      background: var(--text);
+      color: #fff;
+      padding: 10px 18px;
+      border-radius: var(--radius);
+      font-size: 13px;
+      opacity: 0;
+      transform: translateY(8px);
+      transition: opacity 0.2s, transform 0.2s;
+      pointer-events: none;
+      z-index: 100;
+    }
+
+    .toast.show { opacity: 1; transform: translateY(0); }
+    .toast.success { background: var(--green); }
+    .toast.error { background: var(--red); }
+
+    /* Empty state */
+    .empty { text-align: center; padding: 2rem; color: var(--text-muted); font-size: 14px; }
+
+    @media (max-width: 480px) {
+      header { padding: 0 1rem; }
+      .container { padding: 1.25rem 1rem; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Attendance System</h1>
+  <span id="header-date"></span>
+</header>
+
+<div class="container">
+
+  <div class="top-row">
+    <label for="date-picker">Date</label>
+    <input type="date" id="date-picker" />
+    <button class="btn" onclick="loadData()">Load</button>
+  </div>
+
+  <div class="stats">
+    <div class="stat-card"><span class="num" id="stat-total">–</span><span class="lbl">Total</span></div>
+    <div class="stat-card green"><span class="num" id="stat-present">–</span><span class="lbl">Present</span></div>
+    <div class="stat-card red"><span class="num" id="stat-absent">–</span><span class="lbl">Absent</span></div>
+    <div class="stat-card amber"><span class="num" id="stat-rate">–</span><span class="lbl">Rate</span></div>
+  </div>
+
+  <div class="section-header">
+    <h2>Students</h2>
+    <div class="actions">
+      <button class="btn" onclick="markAll(true)">All Present</button>
+      <button class="btn" onclick="markAll(false)">All Absent</button>
+      <button class="btn primary" onclick="saveAttendance()">Save</button>
+    </div>
+  </div>
+
+  <div class="student-list" id="student-list">
+    <div class="empty">Loading students…</div>
+  </div>
+
+  <div class="add-student-row">
+    <input type="text" id="new-name" placeholder="Add new student…" onkeydown="if(event.key==='Enter') addStudent()" />
+    <button class="btn primary" onclick="addStudent()">Add</button>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  const API = 'http://localhost:8081/api';
+  let students = [];
+  let attendance = {}; // id -> bool
+
+  // Init
+  const picker = document.getElementById('date-picker');
+  picker.value = today();
+  document.getElementById('header-date').textContent = formatDate(today());
+  loadData();
+
+  function today() {
+    return new Date().toISOString().slice(0, 10);
+  }
+
+  function formatDate(d) {
+    return new Date(d + 'T00:00:00').toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+  }
+
+  async function loadData() {
+    const date = picker.value || today();
+    document.getElementById('header-date').textContent = formatDate(date);
+    try {
+      const [studRes, attRes] = await Promise.all([
+        fetch(`${API}/students`),
+        fetch(`${API}/attendance?date=${date}`)
+      ]);
+      students = await studRes.json();
+      const attMap = await attRes.json();
+      attendance = {};
+      students.forEach(s => {
+        attendance[s.id] = attMap[s.id] ?? false;
+      });
+      renderStudents();
+      await loadSummary(date);
+    } catch (e) {
+      toast('Could not connect to server. Is Spring Boot running?', 'error');
+    }
+  }
+
+  async function loadSummary(date) {
+    try {
+      const res = await fetch(`${API}/summary?date=${date}`);
+      const data = await res.json();
+      document.getElementById('stat-total').textContent   = data.total;
+      document.getElementById('stat-present').textContent = data.present;
+      document.getElementById('stat-absent').textContent  = data.absent;
+      document.getElementById('stat-rate').textContent    = data.attendanceRate + '%';
+    } catch (_) {}
+  }
+
+  function renderStudents() {
+    const list = document.getElementById('student-list');
+    if (!students.length) {
+      list.innerHTML = '<div class="empty">No students yet. Add one below.</div>';
+      return;
+    }
+    list.innerHTML = students.map(s => {
+      const present = attendance[s.id] ?? false;
+      const initials = s.name.split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase();
+      return `
+        <div class="student-row ${present ? 'present' : 'absent'}" id="row-${s.id}">
+          <div class="avatar">${initials}</div>
+          <span class="student-name">${s.name}</span>
+          <div class="toggle-wrap">
+            <span class="toggle-label">${present ? 'Present' : 'Absent'}</span>
+            <label class="toggle">
+              <input type="checkbox" ${present ? 'checked' : ''} onchange="toggleStudent(${s.id}, this.checked)" />
+              <span class="slider"></span>
+            </label>
+          </div>
+          <button class="btn danger" style="padding:5px 10px;font-size:12px;" onclick="removeStudent(${s.id})">Remove</button>
+        </div>`;
+    }).join('');
+  }
+
+  function toggleStudent(id, present) {
+    attendance[id] = present;
+    const row = document.getElementById('row-' + id);
+    row.className = 'student-row ' + (present ? 'present' : 'absent');
+    row.querySelector('.toggle-label').textContent = present ? 'Present' : 'Absent';
+    const avatar = row.querySelector('.avatar');
+    const s = students.find(x => x.id == id);
+    if (s) avatar.className = 'avatar'; // re-render via CSS class on row
+    updateLocalStats();
+  }
+
+  function updateLocalStats() {
+    const total = students.length;
+    const present = Object.values(attendance).filter(Boolean).length;
+    document.getElementById('stat-total').textContent   = total;
+    document.getElementById('stat-present').textContent = present;
+    document.getElementById('stat-absent').textContent  = total - present;
+    document.getElementById('stat-rate').textContent    = total > 0 ? Math.round(present * 100 / total) + '%' : '–';
+  }
+
+  function markAll(present) {
+    students.forEach(s => { attendance[s.id] = present; });
+    renderStudents();
+    updateLocalStats();
+  }
+
+  async function saveAttendance() {
+    const date = picker.value || today();
+    try {
+      const res = await fetch(`${API}/attendance`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ date, attendance })
+      });
+      if (res.ok) {
+        toast('Attendance saved!', 'success');
+        await loadSummary(date);
+      } else {
+        toast('Save failed.', 'error');
+      }
+    } catch (e) {
+      toast('Server error.', 'error');
+    }
+  }
+
+  async function addStudent() {
+    const input = document.getElementById('new-name');
+    const name = input.value.trim();
+    if (!name) return;
+    try {
+      const res = await fetch(`${API}/students`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name })
+      });
+      if (res.ok) {
+        const s = await res.json();
+        students.push(s);
+        attendance[s.id] = false;
+        input.value = '';
+        renderStudents();
+        updateLocalStats();
+        toast(`${name} added`, 'success');
+      }
+    } catch (e) {
+      toast('Could not add student.', 'error');
+    }
+  }
+
+  async function removeStudent(id) {
+    try {
+      await fetch(`${API}/students/${id}`, { method: 'DELETE' });
+      students = students.filter(s => s.id != id);
+      delete attendance[id];
+      renderStudents();
+      updateLocalStats();
+    } catch (e) {
+      toast('Could not remove student.', 'error');
+    }
+  }
+
+  function toast(msg, type = '') {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.className = 'toast show ' + type;
+    setTimeout(() => { el.className = 'toast'; }, 2800);
+  }
+</script>
+</body>
+</html>
