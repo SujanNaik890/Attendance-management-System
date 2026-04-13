@@ -1,7 +1,6 @@
 services:
   - type: web
     name: attendance-backend
-    env: docker
     plan: free
     buildCommand: ./mvnw clean install
     startCommand: java -jar target/*.jar
