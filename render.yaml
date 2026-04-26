@@ -2,5 +2,10 @@ services:
   - type: web
     name: attendance-backend
     plan: free
-    buildCommand: ./mvnw clean install
+    runtime: node
+    buildCommand: |
+      curl -s "https://get.sdkman.io" | bash
+      source "$HOME/.sdkman/bin/sdkman-init.sh"
+      sdk install java 17.0.9-tem
+      ./mvnw clean install -DskipTests
     startCommand: java -jar target/*.jar

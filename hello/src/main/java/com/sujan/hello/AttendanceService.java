@@ -18,11 +18,23 @@ public class AttendanceService {
     public List<Student> getStudents() {
         return studentRepo.findAll();
     }
+public AttendanceRecord saveAttendance(LocalDate date, Map<String, Boolean> attendance) {
 
-    public Student addStudent(String name) {
-        Student student = new Student(name);
-        return studentRepo.save(student);
+    Optional<AttendanceRecord> existing = attendanceRepo.findByDate(date);
+
+    AttendanceRecord record;
+
+    if (existing.isPresent()) {
+        record = existing.get();
+    } else {
+        record = new AttendanceRecord();
     }
+
+    // update values
+    record = new AttendanceRecord(date, attendance);
+
+    return attendanceRepo.save(record);
+}
 
     public void deleteStudent(String id) {
         if (id != null) {
@@ -36,31 +48,21 @@ public class AttendanceService {
                 .orElse(new HashMap<>());
     }
 
-    public AttendanceRecord saveAttendance(LocalDate date, Map<String, Boolean> attendance) {
-        AttendanceRecord record = new AttendanceRecord(date, attendance);
-        return attendanceRepo.save(record);
+  public AttendanceRecord saveAttendance(LocalDate date, Map<String, Boolean> attendance) {
+
+    Optional<AttendanceRecord> existing = attendanceRepo.findByDate(date);
+
+    AttendanceRecord record;
+
+    if (existing.isPresent()) {
+        record = existing.get();
+    } else {
+        record = new AttendanceRecord();
     }
 
-   public Map<String, Object> getSummary(LocalDate date) {
+    // update fields properly
+    record = new AttendanceRecord(date, attendance);
 
-    Map<String, Boolean> data = getAttendance(date);
-
-    // Safety check
-    if (data == null) {
-        data = new HashMap<>();
-    }
-
-    int total = studentRepo.findAll().size();
-
-    long present = data.values().stream()
-            .filter(v -> v != null && v)
-            .count();
-
-    return Map.of(
-            "total", total,
-            "present", present,
-            "absent", total - present,
-            "attendanceRate", total == 0 ? 0 : (present * 100 / total)
-    );
+    return attendanceRepo.save(record);
 }
 }

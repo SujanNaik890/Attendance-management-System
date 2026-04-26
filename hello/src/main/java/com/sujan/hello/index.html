@@ -304,6 +304,7 @@
 <div class="toast" id="toast"></div>
 
 <script>
+  // const API = 'https://attendance-management-system-bvg6.onrender.com/api';
   const API = 'http://localhost:8081/api';
   let students = [];
   let attendance = {}; // id -> bool
@@ -370,7 +371,7 @@
           <div class="toggle-wrap">
             <span class="toggle-label">${present ? 'Present' : 'Absent'}</span>
             <label class="toggle">
-              <input type="checkbox" ${present ? 'checked' : ''} onchange="toggleStudent(${s.id}, this.checked)" />
+              <input type="checkbox" ${present ? 'checked' : ''}onchange="toggleStudent('${s.id}', this.checked)" />
               <span class="slider"></span>
             </label>
           </div>
@@ -423,30 +424,31 @@
       toast('Server error.', 'error');
     }
   }
+async function saveAttendance() {
+  const date = picker.value || today();
 
-  async function addStudent() {
-    const input = document.getElementById('new-name');
-    const name = input.value.trim();
-    if (!name) return;
-    try {
-      const res = await fetch(`${API}/students`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name })
-      });
-      if (res.ok) {
-        const s = await res.json();
-        students.push(s);
-        attendance[s.id] = false;
-        input.value = '';
-        renderStudents();
-        updateLocalStats();
-        toast(`${name} added`, 'success');
-      }
-    } catch (e) {
-      toast('Could not add student.', 'error');
+  try {
+    const res = await fetch(`${API}/attendance`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ date, attendance })
+    });
+
+    if (res.ok) {
+      toast('Attendance saved!', 'success');
+
+      // 🔥 IMPORTANT FIX
+      await loadData();   // reload full data
+
+    } else {
+      toast('Save failed.', 'error');
     }
+
+  } catch (e) {
+    console.error(e);
+    toast('Server error.', 'error');
   }
+}
 
   async function removeStudent(id) {
     try {
